@@ -5,7 +5,7 @@ package.domain = org.example
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,txt,json
 version = 1.0.0
-requirements = python3==3.9.0,kivy==2.1.0,pyjnius==1.4.0,setuptools,wheel
+requirements = python3,kivy,pyjnius,setuptools,wheel
 orientation = portrait
 fullscreen = 0
 android.permissions = INTERNET
