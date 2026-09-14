@@ -1,19 +1,35 @@
-# user_data.py - Система рейтинга тегов, заметок и прогрессии
+# user_data.py - Система рейтинга тегов, заметок и прогрессии (Android-совместимая)
 
 import json
 import os
 from datetime import datetime
 
 
+def _get_storage_path(filename):
+    """Возвращает правильный путь для сохранения данных.
+    На Android — App.user_data_dir, на десктопе — рядом с main.py."""
+    try:
+        from kivy.app import App
+        app = App.get_running_app()
+        if app is not None:
+            data_dir = app.user_data_dir
+            os.makedirs(data_dir, exist_ok=True)
+            return os.path.join(data_dir, filename)
+    except Exception as e:
+        print(f"[STORAGE] Не удалось получить user_data_dir: {e}")
+    # Fallback для десктопа / тестов
+    return filename
+
+
 class UserPreferences:
     """Управляет предпочтениями пользователя, заметками и прогрессией"""
 
     def __init__(self, storage_file="user_data.json"):
-        self.storage_file = storage_file
+        self.storage_file = _get_storage_path(storage_file)
+        print(f"[STORAGE] Файл данных: {self.storage_file}")
         self.data = self.load_data()
 
     def load_data(self):
-        """Загружает данные пользователя из файла"""
         if os.path.exists(self.storage_file):
             try:
                 with open(self.storage_file, 'r', encoding='utf-8') as f:
@@ -22,39 +38,41 @@ class UserPreferences:
                 for key in default:
                     if key not in data:
                         data[key] = default[key]
+                print(f"[STORAGE] Загружено: {len(data.get('viewed_facts', []))} фактов")
                 return data
-            except:
+            except Exception as e:
+                print(f"[STORAGE] ОШИБКА загрузки: {e}")
                 return self.get_default_data()
+        print("[STORAGE] Файл не найден — создаём новый")
         return self.get_default_data()
 
     def get_default_data(self):
-        """Возвращает структуру данных по умолчанию"""
         return {
-            "viewed_facts": [],  # ID просмотренных фактов
-            "liked_facts": [],  # ID фактов, которые понравились
-            "disliked_facts": [],  # ID фактов, которые не понравились
-            "tag_scores": {},  # {tag: score} - очки тегов
-            "tag_history": [],  # История изменений тегов
-            "notes": {},  # {fact_id: "текст заметки"}
-            "tag_progress": {},  # {tag: [изученные ID фактов]}
-            "achievements": [],  # список полученных достижений
-            "streak_days": 0,  # серия дней
-            "last_activity": None,  # дата последней активности
-            "total_views": 0  # общее количество просмотров
+            "viewed_facts": [],
+            "liked_facts": [],
+            "disliked_facts": [],
+            "tag_scores": {},
+            "tag_history": [],
+            "notes": {},
+            "tag_progress": {},
+            "achievements": [],
+            "streak_days": 0,
+            "last_activity": None,
+            "total_views": 0,
+            "last_visit": None
         }
 
     def save_data(self):
-        """Сохраняет данные пользователя"""
-        self.data["last_visit"] = datetime.now().isoformat()
-        with open(self.storage_file, 'w', encoding='utf-8') as f:
-            json.dump(self.data, f, ensure_ascii=False, indent=2)
+        try:
+            self.data["last_visit"] = datetime.now().isoformat()
+            with open(self.storage_file, 'w', encoding='utf-8') as f:
+                json.dump(self.data, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"[STORAGE] ОШИБКА сохранения: {e}")
 
     def add_view(self, fact_id, tags):
-        """Добавляет просмотр факта и обновляет прогрессию"""
         if fact_id not in self.data["viewed_facts"]:
             self.data["viewed_facts"].append(fact_id)
-
-            # Обновляем прогресс по тегам
             for tag in tags:
                 if tag not in self.data["tag_progress"]:
                     self.data["tag_progress"][tag] = []
@@ -62,120 +80,82 @@ class UserPreferences:
                     self.data["tag_progress"][tag].append(fact_id)
 
         self.data["total_views"] += 1
-
-        # Обновляем серию (streak)
         self.update_streak()
-
         self.save_data()
 
     def update_streak(self):
-        """Обновляет серию дней активности"""
         today = datetime.now().date()
         last = self.data.get("last_activity")
 
         if last:
-            last_date = datetime.fromisoformat(last).date()
-            diff = (today - last_date).days
+            try:
+                last_date = datetime.fromisoformat(last).date()
+                diff = (today - last_date).days
 
-            if diff == 0:
-                # Уже сегодня активен
-                pass
-            elif diff == 1:
-                # Вчера был активен - увеличиваем серию
-                self.data["streak_days"] = self.data.get("streak_days", 0) + 1
-            else:
-                # Пропустил день - сбрасываем серию
-                self.data["streak_days"] = 0
+                if diff == 0:
+                    pass
+                elif diff == 1:
+                    self.data["streak_days"] = self.data.get("streak_days", 0) + 1
+                else:
+                    self.data["streak_days"] = 0
+            except Exception:
+                self.data["streak_days"] = 1
         else:
-            # Первая активность
             self.data["streak_days"] = 1
 
         self.data["last_activity"] = datetime.now().isoformat()
 
-    # ===== МЕТОДЫ ДЛЯ ПРОГРЕССИИ =====
+    # ===== ПРОГРЕССИЯ =====
 
     def get_total_progress(self, total_facts):
-        """Возвращает общий прогресс в процентах"""
         if total_facts == 0:
             return 0
         return round((len(self.data["viewed_facts"]) / total_facts) * 100)
 
     def get_tag_progress(self, tag, total_facts_for_tag):
-        """Возвращает прогресс по тегу в процентах"""
         if total_facts_for_tag == 0:
             return 0
         viewed = len(self.data["tag_progress"].get(tag, []))
         return round((viewed / total_facts_for_tag) * 100)
 
-    def get_tag_progress_details(self, all_tags_data):
-        """Возвращает детальную информацию о прогрессе по тегам"""
-        result = {}
-        for tag, facts in all_tags_data.items():
-            total = len(facts)
-            viewed = len(self.data["tag_progress"].get(tag, []))
-            result[tag] = {
-                "total": total,
-                "viewed": viewed,
-                "progress": self.get_tag_progress(tag, total),
-                "completed": viewed >= total
-            }
-        return result
-
     def get_achievement_progress(self):
-        """Возвращает прогресс по достижениям"""
         achievements = []
         viewed_count = len(self.data["viewed_facts"])
 
-        # Достижения по количеству фактов
         if viewed_count >= 1:
-            achievements.append(
-                {"id": "first_fact", "name": "Первый шаг", "desc": "Прочитан первый факт", "unlocked": True})
+            achievements.append({"id": "first_fact", "name": "Первый шаг", "desc": "Прочитан первый факт"})
         if viewed_count >= 10:
-            achievements.append(
-                {"id": "ten_facts", "name": "Любознательный", "desc": "Прочитано 10 фактов", "unlocked": True})
+            achievements.append({"id": "ten_facts", "name": "Любознательный", "desc": "Прочитано 10 фактов"})
         if viewed_count >= 25:
-            achievements.append(
-                {"id": "twenty_five", "name": "Исследователь", "desc": "Прочитано 25 фактов", "unlocked": True})
+            achievements.append({"id": "twenty_five", "name": "Исследователь", "desc": "Прочитано 25 фактов"})
         if viewed_count >= 50:
-            achievements.append(
-                {"id": "fifty_facts", "name": "Знаток истории", "desc": "Прочитано 50 фактов", "unlocked": True})
+            achievements.append({"id": "fifty_facts", "name": "Знаток истории", "desc": "Прочитано 50 фактов"})
 
-        # Достижение за серию
         streak = self.data.get("streak_days", 0)
         if streak >= 3:
-            achievements.append(
-                {"id": "streak_3", "name": "Постоянный", "desc": "Активен 3 дня подряд", "unlocked": True})
+            achievements.append({"id": "streak_3", "name": "Постоянный", "desc": "Активен 3 дня подряд"})
         if streak >= 7:
-            achievements.append(
-                {"id": "streak_7", "name": "Неутомимый", "desc": "Активен 7 дней подряд", "unlocked": True})
+            achievements.append({"id": "streak_7", "name": "Неутомимый", "desc": "Активен 7 дней подряд"})
 
         return achievements
 
-    def add_achievement(self, achievement_id):
-        """Добавляет достижение, если его ещё нет"""
-        if achievement_id not in self.data["achievements"]:
-            self.data["achievements"].append(achievement_id)
-            self.save_data()
-            return True
-        return False
-
     def get_streak_days(self):
-        """Возвращает текущую серию дней"""
-        # Проверяем, не пропущен ли сегодняшний день
         today = datetime.now().date()
         last = self.data.get("last_activity")
         if last:
-            last_date = datetime.fromisoformat(last).date()
-            diff = (today - last_date).days
-            if diff > 1:
-                self.data["streak_days"] = 0
-                self.save_data()
+            try:
+                last_date = datetime.fromisoformat(last).date()
+                diff = (today - last_date).days
+                if diff > 1:
+                    self.data["streak_days"] = 0
+                    self.save_data()
+            except Exception:
+                pass
         return self.data.get("streak_days", 0)
 
-    # ===== МЕТОДЫ ДЛЯ ЗАМЕТОК =====
+    # ===== ЗАМЕТКИ =====
 
     def add_note(self, fact_id, note_text):
-        """Добавляет или обновляет заметку для факта"""
         if note_text and note_text.strip():
             self.data["notes"][str(fact_id)] = note_text.strip()
         else:
@@ -185,15 +165,12 @@ class UserPreferences:
         return True
 
     def get_note(self, fact_id):
-        """Возвращает заметку для факта, если есть"""
         return self.data["notes"].get(str(fact_id), "")
 
     def has_note(self, fact_id):
-        """Проверяет, есть ли заметка для факта"""
         return str(fact_id) in self.data["notes"]
 
     def delete_note(self, fact_id):
-        """Удаляет заметку для факта"""
         if str(fact_id) in self.data["notes"]:
             del self.data["notes"][str(fact_id)]
             self.save_data()
@@ -201,49 +178,33 @@ class UserPreferences:
         return False
 
     def get_all_notes(self):
-        """Возвращает все заметки в виде {fact_id: note_text}"""
         return self.data.get("notes", {}).copy()
 
-    # ===== МЕТОДЫ ДЛЯ ОЦЕНОК (ЛАЙК/ДИЗЛАЙК) =====
+    # ===== ОЦЕНКИ =====
 
     def add_like(self, fact_id, tags):
-        """Добавляет лайк факту (+1 к каждому тегу)"""
         if fact_id in self.data["disliked_facts"]:
             self.data["disliked_facts"].remove(fact_id)
         if fact_id not in self.data["liked_facts"]:
             self.data["liked_facts"].append(fact_id)
             for tag in tags:
                 self.data["tag_scores"][tag] = self.data["tag_scores"].get(tag, 0) + 1
-                self.data["tag_history"].append({
-                    "tag": tag,
-                    "change": +1,
-                    "fact_id": fact_id,
-                    "timestamp": datetime.now().isoformat()
-                })
             self.save_data()
             return True
         return False
 
     def add_dislike(self, fact_id, tags):
-        """Добавляет дизлайк факту (-1 к каждому тегу)"""
         if fact_id in self.data["liked_facts"]:
             self.data["liked_facts"].remove(fact_id)
         if fact_id not in self.data["disliked_facts"]:
             self.data["disliked_facts"].append(fact_id)
             for tag in tags:
                 self.data["tag_scores"][tag] = self.data["tag_scores"].get(tag, 0) - 1
-                self.data["tag_history"].append({
-                    "tag": tag,
-                    "change": -1,
-                    "fact_id": fact_id,
-                    "timestamp": datetime.now().isoformat()
-                })
             self.save_data()
             return True
         return False
 
     def remove_like(self, fact_id, tags):
-        """Удаляет лайк (отмена)"""
         if fact_id in self.data["liked_facts"]:
             self.data["liked_facts"].remove(fact_id)
             for tag in tags:
@@ -253,7 +214,6 @@ class UserPreferences:
         return False
 
     def remove_dislike(self, fact_id, tags):
-        """Удаляет дизлайк (отмена)"""
         if fact_id in self.data["disliked_facts"]:
             self.data["disliked_facts"].remove(fact_id)
             for tag in tags:
@@ -262,14 +222,12 @@ class UserPreferences:
             return True
         return False
 
-    # ===== МЕТОДЫ ДЛЯ РЕЙТИНГА =====
+    # ===== РЕЙТИНГ =====
 
     def get_tag_score(self, tag):
-        """Возвращает текущий рейтинг тега"""
         return self.data["tag_scores"].get(tag, 0)
 
     def get_top_tags(self, limit=5):
-        """Возвращает топ N тегов по очкам"""
         sorted_tags = sorted(
             self.data["tag_scores"].items(),
             key=lambda x: x[1],
@@ -278,41 +236,25 @@ class UserPreferences:
         return sorted_tags[:limit]
 
     def get_bottom_tags(self, limit=5):
-        """Возвращает худшие N тегов по очкам"""
         sorted_tags = sorted(
             self.data["tag_scores"].items(),
             key=lambda x: x[1]
         )
         return sorted_tags[:limit]
 
-    # ===== СИСТЕМА РЕКОМЕНДАЦИЙ =====
-
     def get_recommendation_score(self, fact):
-        """Вычисляет рейтинг рекомендации для факта на основе очков тегов"""
         if "tags" not in fact:
             return 0
-
-        # Суммируем очки всех тегов факта
         total_score = sum(self.get_tag_score(tag) for tag in fact["tags"])
-
-        # Штраф за повторный просмотр
         if fact["id"] in self.data["viewed_facts"]:
             total_score -= 5
-
-        # Бонус за новизну (если факт не просмотрен)
         if fact["id"] not in self.data["viewed_facts"]:
             total_score += 2
-
-        # Если факт уже в избранном, показываем его чаще
         if fact["id"] in self.data["liked_facts"]:
             total_score += 3
-
         return total_score
 
-    # ===== СТАТИСТИКА ПОЛЬЗОВАТЕЛЯ =====
-
     def get_user_stats(self):
-        """Возвращает статистику пользователя"""
         return {
             "total_views": self.data["total_views"],
             "liked_count": len(self.data["liked_facts"]),
@@ -325,26 +267,22 @@ class UserPreferences:
         }
 
     def get_fact_status(self, fact_id):
-        """Возвращает статус факта (лайк, дизлайк или нейтральный)"""
         if fact_id in self.data["liked_facts"]:
             return "liked"
         elif fact_id in self.data["disliked_facts"]:
             return "disliked"
         return "neutral"
 
-    # ===== УПРАВЛЕНИЕ ДАННЫМИ =====
+    # ===== УПРАВЛЕНИЕ =====
 
     def clear_history(self):
-        """Очищает историю просмотров и прогресс, сохраняя избранное, заметки и рейтинг"""
         self.data["viewed_facts"] = []
         self.data["tag_progress"] = {}
         self.data["total_views"] = 0
         self.data["streak_days"] = 0
         self.data["last_activity"] = None
-        # Не удаляем: liked_facts, disliked_facts, tag_scores, tag_history, notes, achievements
         self.save_data()
 
     def reset_data(self):
-        """Сбрасывает все данные пользователя"""
         self.data = self.get_default_data()
         self.save_data()
