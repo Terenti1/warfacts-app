@@ -7,21 +7,26 @@ on:
 
 jobs:
   build-android:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    container:
+      image: kivy/buildozer:latest
+      options: --user root
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
-        with:
-          command: android debug
-          buildozer_version: stable
+      - name: Build APK
+        run: |
+          yes | buildozer android debug || true
+          ls -la bin/ || true
+          if [ ! -f bin/*.apk ]; then
+            echo "APK не создан"
+            exit 1
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: warfacts-apk
-          path: ${{ steps.buildozer.outputs.filename }}
+          path: bin/*.apk
