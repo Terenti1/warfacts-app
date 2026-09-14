@@ -9,7 +9,7 @@ version = 1.0.0
 requirements = hostpython3==3.10.12,python3==3.10.12,kivy
 
 orientation = portrait
-fullscreen = 0
+fullscreen = 1
 
 android.permissions = INTERNET
 android.api = 33
@@ -21,6 +21,7 @@ android.graphics_api = gl
 android.accept_sdk_license = True
 android.allow_backup = True
 android.debug_artifact = apk
+android.manifest.orientation = portrait
 
 [buildozer]
 log_level = 2
