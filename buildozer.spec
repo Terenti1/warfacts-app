@@ -25,4 +25,4 @@ android.debug_artifact = apk
 [buildozer]
 log_level = 2
 warn_on_root = 0
-p4a.branch = v2023.05.25
+p4a.branch = v2023.01.02
