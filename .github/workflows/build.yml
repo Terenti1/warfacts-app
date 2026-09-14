@@ -7,42 +7,41 @@ on:
 
 jobs:
   build-android:
-    runs-on: ubuntu-latest
-    container:
-      image: python:3.10-bullseye
-      options: --user root
+    runs-on: ubuntu-22.04
 
     steps:
-      - name: Fix Debian repositories (use archive)
-        run: |
-          sed -i 's|deb.debian.org|archive.debian.org|g' /etc/apt/sources.list
-          sed -i 's|security.debian.org|archive.debian.org|g' /etc/apt/sources.list
-          sed -i '/bullseye-updates/d' /etc/apt/sources.list
-          echo "Acquire::Check-Valid-Until \"false\";" > /etc/apt/apt.conf.d/99no-check-valid-until
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
       - name: Install system dependencies
         run: |
-          apt-get update
-          apt-get install -y \
+          sudo apt-get update
+          sudo apt-get install -y \
             git zip unzip openjdk-17-jdk \
             autoconf libtool pkg-config \
             zlib1g-dev libncurses5-dev libncursesw5-dev \
             cmake libffi-dev libssl-dev \
             liblzma-dev
 
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Install Python dependencies
         run: |
-          pip install --upgrade "pip==24.2" "setuptools<70" "cython<3.0"
-          pip install buildozer
+          python -m pip install --upgrade "pip==24.2" "setuptools<70" "cython<3.0"
+          python -m pip install "buildozer==1.5.0"
 
       - name: Show versions
         run: |
           python --version
-          pip --version
           buildozer --version
+
+      - name: Clean buildozer cache
+        run: |
+          rm -rf ~/.buildozer
+          rm -rf .buildozer
 
       - name: Build APK
         run: |
