@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -18,15 +21,17 @@ jobs:
             autoconf libtool pkg-config \
             zlib1g-dev libncurses5-dev libncursesw5-dev \
             cmake libffi-dev libssl-dev \
-            liblzma-dev
+            liblzma-dev python3-pip python3-venv
 
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
       - name: Install Python dependencies
         run: |
-          pip install --upgrade "pip==24.2" "setuptools<70" "cython<3.0"
-          pip install buildozer
+          python -m pip install --upgrade "pip==24.2" "setuptools<70" "cython<3.0"
+          python -m pip install buildozer
 
       - name: Show versions
         run: |
