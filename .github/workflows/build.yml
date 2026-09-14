@@ -30,7 +30,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          python -m pip install --upgrade "pip<24.1" "setuptools<70" "cython<3"
+          python -m pip install --upgrade "pip<24.1" "setuptools<70" "cython<3.0"
           python -m pip install buildozer
 
       - name: Build APK with Buildozer
