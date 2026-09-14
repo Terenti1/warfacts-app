@@ -7,32 +7,30 @@ on:
 
 jobs:
   build-android:
+    runs-on: ubuntu-lname: Build APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
     runs-on: ubuntu-latest
-    container:
-      image: kivy/buildozer:latest
-      options: --user root
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Show versions
-        run: |
-          python --version
-          pip --version
-          buildozer --version
-
-      - name: Build APK
-        run: |
-          buildozer android debug
+      - name: Build with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
+        with:
+          command: android debug
+          buildozer_version: stable
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: warfacts-apk
-          path: bin/*.apk
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: warfacts-apk
-          path: bin/*.apk
+          path: ${{ steps.buildozer.outputs.filename }}
