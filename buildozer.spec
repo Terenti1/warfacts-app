@@ -6,7 +6,7 @@ source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,txt,json
 version = 1.0.0
 
-requirements = python3==3.10.12,kivy==2.1.0
+requirements = python3,kivy
 
 orientation = portrait
 fullscreen = 0
@@ -25,3 +25,4 @@ android.debug_artifact = apk
 [buildozer]
 log_level = 2
 warn_on_root = 0
+p4a.branch = v2024.01.21
