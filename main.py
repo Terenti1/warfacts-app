@@ -24,7 +24,7 @@ try:
 except Exception:
     __version__ = "1.0.0"
 
-# Проверка обновлений (безопасный импорт — если что-то сломано, приложение всё равно запустится)
+# Проверка обновлений (безопасный импорт)
 try:
     from updater import check_for_updates, UPDATER_AVAILABLE
 except Exception as e:
@@ -37,12 +37,22 @@ except Exception as e:
 
 
 class MainMenuScreen(Screen):
-    """Главное меню без быстрых тегов"""
+    """Главное меню"""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.user_prefs = UserPreferences()
+        self._built_once = False
         self.build_ui()
+
+    def on_enter(self, *args):
+        """Перестраивает UI при каждом входе на экран."""
+        if self._built_once:
+            self.clear_widgets()
+            self.user_prefs = UserPreferences()
+            self.build_ui()
+        else:
+            self._built_once = True
 
     def build_ui(self):
         layout = BoxLayout(orientation='vertical', padding=15, spacing=8)
@@ -811,7 +821,16 @@ class HistoryScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.user_prefs = UserPreferences()
+        self._built_once = False
         self.build_ui()
+
+    def on_enter(self, *args):
+        if self._built_once:
+            self.clear_widgets()
+            self.user_prefs = UserPreferences()
+            self.build_ui()
+        else:
+            self._built_once = True
 
     def build_ui(self):
         layout = BoxLayout(orientation='vertical', padding=15, spacing=10)
@@ -897,7 +916,16 @@ class FavoritesScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.user_prefs = UserPreferences()
+        self._built_once = False
         self.build_ui()
+
+    def on_enter(self, *args):
+        if self._built_once:
+            self.clear_widgets()
+            self.user_prefs = UserPreferences()
+            self.build_ui()
+        else:
+            self._built_once = True
 
     def build_ui(self):
         layout = BoxLayout(orientation='vertical', padding=15, spacing=10)
@@ -975,7 +1003,16 @@ class NotesScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.user_prefs = UserPreferences()
+        self._built_once = False
         self.build_ui()
+
+    def on_enter(self, *args):
+        if self._built_once:
+            self.clear_widgets()
+            self.user_prefs = UserPreferences()
+            self.build_ui()
+        else:
+            self._built_once = True
 
     def build_ui(self):
         layout = BoxLayout(orientation='vertical', padding=15, spacing=10)
@@ -1048,7 +1085,16 @@ class StatsScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.user_prefs = UserPreferences()
+        self._built_once = False
         self.build_ui()
+
+    def on_enter(self, *args):
+        if self._built_once:
+            self.clear_widgets()
+            self.user_prefs = UserPreferences()
+            self.build_ui()
+        else:
+            self._built_once = True
 
     def build_ui(self):
         layout = BoxLayout(orientation='vertical', padding=15, spacing=10)
@@ -1311,7 +1357,16 @@ class SettingsScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.user_prefs = UserPreferences()
+        self._built_once = False
         self.build_ui()
+
+    def on_enter(self, *args):
+        if self._built_once:
+            self.clear_widgets()
+            self.user_prefs = UserPreferences()
+            self.build_ui()
+        else:
+            self._built_once = True
 
     def build_ui(self):
         layout = BoxLayout(orientation='vertical', padding=15, spacing=15)
@@ -1704,7 +1759,16 @@ class TagListScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.user_prefs = UserPreferences()
+        self._built_once = False
         self.build_ui()
+
+    def on_enter(self, *args):
+        if self._built_once:
+            self.clear_widgets()
+            self.user_prefs = UserPreferences()
+            self.build_ui()
+        else:
+            self._built_once = True
 
     def build_ui(self):
         layout = BoxLayout(orientation='vertical', padding=15, spacing=10)
@@ -1802,7 +1866,16 @@ class TopScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.user_prefs = UserPreferences()
+        self._built_once = False
         self.build_ui()
+
+    def on_enter(self, *args):
+        if self._built_once:
+            self.clear_widgets()
+            self.user_prefs = UserPreferences()
+            self.build_ui()
+        else:
+            self._built_once = True
 
     def build_ui(self):
         layout = BoxLayout(orientation='vertical', padding=15, spacing=10)
