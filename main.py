@@ -18,7 +18,7 @@ from kivy.graphics import Color, Rectangle
 from data import FACTS_DATABASE, get_facts_count, get_fact_by_id, get_all_tags, get_facts_by_tag
 from user_data import UserPreferences
 
-Window.size = (360, 640)
+#Window.size = (360, 640)
 
 
 class MainMenuScreen(Screen):
