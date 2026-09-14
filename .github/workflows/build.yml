@@ -9,21 +9,37 @@ jobs:
   build-android:
     runs-on: ubuntu-latest
     container:
-      image: kivy/buildozer:stable
+      image: python:3.10-bullseye
       options: --user root
 
     steps:
+      - name: Install system dependencies
+        run: |
+          apt-get update
+          apt-get install -y \
+            git zip unzip openjdk-17-jdk \
+            autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev \
+            cmake libffi-dev libssl-dev \
+            liblzma-dev
+
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade "pip==24.2" "setuptools<70" "cython<3.0"
+          pip install buildozer
+
+      - name: Show versions
+        run: |
+          python --version
+          pip --version
+          buildozer --version
+
       - name: Build APK
         run: |
-          yes | buildozer android debug || true
-          ls -la bin/ || true
-          if [ ! -f bin/*.apk ]; then
-            echo "APK не создан"
-            exit 1
-          fi
+          buildozer android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
