@@ -14,9 +14,16 @@ from kivy.utils import get_color_from_hex
 from kivy.graphics import Color, Rectangle
 
 from data import FACTS_DATABASE, get_facts_count, get_fact_by_id, get_all_tags, get_facts_by_tag
-from user_data import UserPreferences
-from updater import check_for_updates
+from user_data import UserPreference
 from version import __version__
+try:
+    from updater import check_for_updates
+    UPDATER_ENABLED = True
+except Exception as e:
+    print(f"[MAIN] Updater недоступен: {e}")
+    UPDATER_ENABLED = False
+    def check_for_updates(manual=False):
+        pass
 
 # Window.size = (360, 640)
 
@@ -1390,7 +1397,7 @@ class SettingsScreen(Screen):
             font_size='16sp',
             bold=True
         )
-        update_btn.bind(on_press=lambda x: check_for_updates(manual=True))
+        update_btn.bind(on_press=lambda x: check_for_updates(manual=True) if UPDATER_ENABLED else None)
         content.add_widget(update_btn)
         
         # --- Раздел: УПРАВЛЕНИЕ ДАННЫМИ ---
@@ -1924,8 +1931,8 @@ class WarFactApp(App):
         sm.add_widget(TopScreen(name='top_screen'))
         
         # Автопроверка обновлений через 5 секунд после запуска
-        from kivy.clock import Clock
-        Clock.schedule_once(lambda dt: check_for_updates(manual=False), 5)
+        #from kivy.clock import Clock
+        #Clock.schedule_once(lambda dt: check_for_updates(manual=False), 5)
         
         return sm
 
