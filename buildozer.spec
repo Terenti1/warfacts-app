@@ -5,20 +5,21 @@ package.domain = org.example
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,txt,json
 version = 1.0.0
+
 requirements = python3,kivy
+
 orientation = portrait
 fullscreen = 0
+
 android.permissions = INTERNET
+android.api = 30
 android.minapi = 21
-android.api = 33
-android.ndk = 25b
+android.ndk = 23b
 android.ndk_api = 21
-android.archs = arm64-v8a, armeabi-v7a
+android.archs = arm64-v8a
 android.graphics_api = gl
-android.allow_backup = True
 android.accept_sdk_license = True
-android.enable_androidx = True
-android.copy_libs = 1
+android.allow_backup = True
 android.debug_artifact = apk
 
 [buildozer]
