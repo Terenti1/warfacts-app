@@ -1,6 +1,9 @@
-# updater.py - Проверка обновлений через GitHub Releases (Android-safe)
+# updater.py - Проверка обновлений (безопасная версия)
+# Все тяжёлые импорты — внутри функций, чтобы приложение не падало,
+# если чего-то нет в сборке.
 
 import threading
+
 from kivy.clock import Clock
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
@@ -8,13 +11,17 @@ from kivy.uix.button import Button
 from kivy.uix.popup import Popup
 from kivy.utils import get_color_from_hex
 
-from version import __version__
+try:
+    from version import __version__
+except Exception:
+    __version__ = "1.0.0"
 
-# --- Настройки ---
 GITHUB_USER = "Terenti1"
 GITHUB_REPO = "warfacts-app"
 API_URL = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/releases/latest"
 RELEASES_URL = f"https://github.com/{GITHUB_USER}/{GITHUB_REPO}/releases/latest"
+
+UPDATER_AVAILABLE = True
 
 
 def _version_tuple(v):
@@ -25,8 +32,8 @@ def _version_tuple(v):
 
 
 def _open_url(url):
-    """Открывает ссылку в браузере. На Android использует Intent."""
-    # Сначала пробуем Android-способ
+    """Открывает ссылку. На Android — через Intent, иначе — через webbrowser."""
+    # Android
     try:
         from jnius import autoclass
         Intent = autoclass('android.content.Intent')
@@ -36,25 +43,25 @@ def _open_url(url):
         PythonActivity.mActivity.startActivity(intent)
         return True
     except Exception as e:
-        print(f"[UPDATER] jnius failed: {e}")
+        print(f"[UPDATER] jnius не сработал: {e}")
 
-    # Fallback для десктопа
+    # Desktop fallback
     try:
         import webbrowser
         webbrowser.open(url)
         return True
     except Exception as e:
-        print(f"[UPDATER] webbrowser failed: {e}")
+        print(f"[UPDATER] webbrowser не сработал: {e}")
 
     return False
 
 
 def _fetch_latest_release():
-    """Возвращает dict или None при ошибке."""
+    """Запрашивает последний релиз. Возвращает dict или None."""
     try:
         import requests
     except ImportError:
-        print("[UPDATER] requests не установлен")
+        print("[UPDATER] Модуль requests не установлен")
         return None
 
     try:
@@ -68,7 +75,7 @@ def _fetch_latest_release():
         if not tag:
             return None
 
-        notes = data.get("body", "")[:300]
+        notes = (data.get("body") or "")[:300]
 
         download_url = None
         for asset in data.get("assets", []):
@@ -85,28 +92,36 @@ def _fetch_latest_release():
         return None
 
 
-def check_for_updates(manual=False, parent_widget=None):
-    """Проверяет обновления в фоновом потоке."""
+def check_for_updates(manual=False):
+    """Запускает проверку обновлений в фоновом потоке."""
     def worker():
-        info = _fetch_latest_release()
-        if not info:
-            if manual:
-                Clock.schedule_once(lambda dt: _show_info_popup(
-                    "Не удалось проверить обновления",
-                    "Проверьте подключение к интернету."
-                ), 0)
-            return
+        try:
+            info = _fetch_latest_release()
 
-        current = _version_tuple(__version__)
-        latest = _version_tuple(info["version"])
+            if not info:
+                if manual:
+                    Clock.schedule_once(
+                        lambda dt: _show_info(
+                            "Не удалось проверить обновления",
+                            "Проверьте подключение к интернету."
+                        ), 0
+                    )
+                return
 
-        if latest > current:
-            Clock.schedule_once(lambda dt: _show_update_popup(info), 0)
-        elif manual:
-            Clock.schedule_once(lambda dt: _show_info_popup(
-                "Обновлений нет",
-                f"У вас последняя версия: {__version__}"
-            ), 0)
+            current = _version_tuple(__version__)
+            latest = _version_tuple(info["version"])
+
+            if latest > current:
+                Clock.schedule_once(lambda dt: _show_update_popup(info), 0)
+            elif manual:
+                Clock.schedule_once(
+                    lambda dt: _show_info(
+                        "Обновлений нет",
+                        f"У вас последняя версия: {__version__}"
+                    ), 0
+                )
+        except Exception as e:
+            print(f"[UPDATER] Ошибка worker: {e}")
 
     threading.Thread(target=worker, daemon=True).start()
 
@@ -178,7 +193,7 @@ def _show_update_popup(info):
     popup.open()
 
 
-def _show_info_popup(title, message):
+def _show_info(title, message):
     content = BoxLayout(orientation='vertical', padding=15, spacing=10)
 
     content.add_widget(Label(
