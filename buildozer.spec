@@ -22,6 +22,9 @@ android.accept_sdk_license = True
 android.allow_backup = True
 android.debug_artifact = apk
 
+# ФОРСИРУЕМ версию p4a, где Python 3.10
+p4a.branch = v2023.05.25
+
 [buildozer]
 log_level = 2
 warn_on_root = 0
