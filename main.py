@@ -1,5 +1,3 @@
-# main.py - Приложение "Факты о ВОВ" (только изученные факты)
-
 import random
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
@@ -17,8 +15,10 @@ from kivy.graphics import Color, Rectangle
 
 from data import FACTS_DATABASE, get_facts_count, get_fact_by_id, get_all_tags, get_facts_by_tag
 from user_data import UserPreferences
+from updater import check_for_updates
+from version import __version__
 
-#Window.size = (360, 640)
+# Window.size = (360, 640)
 
 
 class MainMenuScreen(Screen):
@@ -1326,15 +1326,16 @@ class StatsScreen(Screen):
 
 class SettingsScreen(Screen):
     """Экран настроек"""
-
+    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.user_prefs = UserPreferences()
         self.build_ui()
-
+    
     def build_ui(self):
         layout = BoxLayout(orientation='vertical', padding=15, spacing=15)
-
+        
+        # ---------- ЗАГОЛОВОК ----------
         header = BoxLayout(size_hint=(1, 0.08))
         back_btn = Button(
             text="<--",
@@ -1345,7 +1346,7 @@ class SettingsScreen(Screen):
         )
         back_btn.bind(on_press=lambda x: setattr(self.manager, 'current', 'main_menu'))
         header.add_widget(back_btn)
-
+        
         title = Label(
             text="Настройки",
             font_size='20sp',
@@ -1355,18 +1356,53 @@ class SettingsScreen(Screen):
         )
         header.add_widget(title)
         layout.add_widget(header)
-
-        content = BoxLayout(orientation='vertical', size_hint=(1, 0.92), spacing=15)
-
+        
+        # ---------- СОДЕРЖИМОЕ (в ScrollView) ----------
+        scroll = ScrollView(size_hint=(1, 0.92))
+        content = BoxLayout(orientation='vertical', size_hint_y=None, spacing=12)
+        content.bind(minimum_height=content.setter('height'))
+        
+        # --- Раздел: ОБНОВЛЕНИЯ ---
         content.add_widget(Label(
-            text="[ УПРАВЛЕНИЕ ДАННЫМИ ]",
+            text="[ ОБНОВЛЕНИЯ ]",
             font_size='16sp',
             color=get_color_from_hex('#c9a84c'),
             size_hint=(1, None),
             height=35,
             bold=True
         ))
-
+        
+        content.add_widget(Label(
+            text=f"Версия приложения: {__version__}",
+            font_size='14sp',
+            color=(0.9, 0.9, 0.9, 1),
+            size_hint=(1, None),
+            height=30,
+            halign='center'
+        ))
+        
+        update_btn = Button(
+            text="ПРОВЕРИТЬ ОБНОВЛЕНИЯ",
+            size_hint=(1, None),
+            height=50,
+            background_color=get_color_from_hex('#2c3e50'),
+            color=(1, 1, 1, 1),
+            font_size='16sp',
+            bold=True
+        )
+        update_btn.bind(on_press=lambda x: check_for_updates(manual=True))
+        content.add_widget(update_btn)
+        
+        # --- Раздел: УПРАВЛЕНИЕ ДАННЫМИ ---
+        content.add_widget(Label(
+            text="\n[ УПРАВЛЕНИЕ ДАННЫМИ ]",
+            font_size='16sp',
+            color=get_color_from_hex('#c9a84c'),
+            size_hint=(1, None),
+            height=45,
+            bold=True
+        ))
+        
         stats = self.user_prefs.get_user_stats()
         info_grid = GridLayout(cols=2, spacing=8, size_hint=(1, None), height=80)
         info_grid.add_widget(Label(
@@ -1385,20 +1421,15 @@ class SettingsScreen(Screen):
             color=(0.9, 0.9, 0.9, 1)
         ))
         info_grid.add_widget(Label(
-            text=f"🔥 Серия: {stats['streak_days']} дней",
+            text=f"Серия: {stats['streak_days']} дней",
             font_size='14sp',
             color=(0.9, 0.7, 0.2, 1)
         ))
         content.add_widget(info_grid)
-
-        content.add_widget(Label(
-            text="",
-            size_hint=(1, None),
-            height=10
-        ))
-
+        
+        # Кнопка "Очистить историю"
         clear_btn = Button(
-            text="🗑️ ОЧИСТИТЬ ИСТОРИЮ",
+            text="ОЧИСТИТЬ ИСТОРИЮ",
             size_hint=(1, None),
             height=55,
             background_color=(0.6, 0.2, 0.2, 0.9),
@@ -1408,7 +1439,7 @@ class SettingsScreen(Screen):
         )
         clear_btn.bind(on_press=self.confirm_clear_history)
         content.add_widget(clear_btn)
-
+        
         content.add_widget(Label(
             text="Очищает историю просмотров и прогресс.\nИзбранное, заметки и рейтинг тегов сохраняются.",
             font_size='12sp',
@@ -1417,9 +1448,10 @@ class SettingsScreen(Screen):
             height=40,
             halign='center'
         ))
-
+        
+        # Кнопка "Очистить всё"
         clear_all_btn = Button(
-            text="⚠️ ОЧИСТИТЬ ВСЕ ДАННЫЕ",
+            text="ОЧИСТИТЬ ВСЕ ДАННЫЕ",
             size_hint=(1, None),
             height=50,
             background_color=(0.4, 0.1, 0.1, 0.8),
@@ -1429,7 +1461,7 @@ class SettingsScreen(Screen):
         )
         clear_all_btn.bind(on_press=self.confirm_clear_all)
         content.add_widget(clear_all_btn)
-
+        
         content.add_widget(Label(
             text="Удаляет ВСЕ данные: историю, избранное,\nзаметки, рейтинг тегов и прогресс.",
             font_size='12sp',
@@ -1438,36 +1470,30 @@ class SettingsScreen(Screen):
             height=40,
             halign='center'
         ))
-
+        
         content.add_widget(Label(
             text="",
             size_hint=(1, None),
             height=20
         ))
-        content.add_widget(Label(
-            text="Версия приложения: 1.0",
-            font_size='12sp',
-            color=(0.3, 0.3, 0.3, 1),
-            size_hint=(1, None),
-            height=30,
-            halign='center'
-        ))
-
-        layout.add_widget(content)
+        
+        scroll.add_widget(content)
+        layout.add_widget(scroll)
         self.add_widget(layout)
-
+    
     def confirm_clear_history(self, instance):
+        """Подтверждение очистки истории"""
         content = BoxLayout(orientation='vertical', padding=15, spacing=15)
-
+        
         content.add_widget(Label(
-            text="⚠️ ПОДТВЕРЖДЕНИЕ",
+            text="ПОДТВЕРЖДЕНИЕ",
             font_size='18sp',
             color=get_color_from_hex('#c9a84c'),
             size_hint=(1, None),
             height=40,
             bold=True
         ))
-
+        
         content.add_widget(Label(
             text="Вы действительно хотите очистить\nисторию просмотров и прогресс?\n\nИзбранное, заметки и рейтинг тегов\nбудут сохранены.",
             font_size='16sp',
@@ -1476,9 +1502,9 @@ class SettingsScreen(Screen):
             height=120,
             halign='center'
         ))
-
+        
         btn_row = BoxLayout(size_hint=(1, None), height=45, spacing=10)
-
+        
         cancel_btn = Button(
             text="Отмена",
             background_color=(0.3, 0.3, 0.3, 0.8),
@@ -1486,7 +1512,7 @@ class SettingsScreen(Screen):
             font_size='16sp'
         )
         btn_row.add_widget(cancel_btn)
-
+        
         confirm_btn = Button(
             text="Очистить",
             background_color=(0.6, 0.2, 0.2, 0.9),
@@ -1495,16 +1521,16 @@ class SettingsScreen(Screen):
             bold=True
         )
         btn_row.add_widget(confirm_btn)
-
+        
         content.add_widget(btn_row)
-
+        
         popup = Popup(
             title="",
             content=content,
             size_hint=(0.85, 0.5),
             background_color=(0.1, 0.1, 0.1, 0.95)
         )
-
+        
         def do_clear(instance):
             self.user_prefs.clear_history()
             popup.dismiss()
@@ -1513,7 +1539,7 @@ class SettingsScreen(Screen):
             success_popup = Popup(
                 title="",
                 content=Label(
-                    text="✅ История очищена!\nИзбранное и заметки сохранены.",
+                    text="История очищена!\nИзбранное и заметки сохранены.",
                     font_size='16sp',
                     color=(0.2, 0.8, 0.2, 1),
                     halign='center'
@@ -1524,23 +1550,24 @@ class SettingsScreen(Screen):
             success_popup.open()
             from kivy.clock import Clock
             Clock.schedule_once(lambda dt: success_popup.dismiss(), 1.5)
-
+        
         confirm_btn.bind(on_press=do_clear)
         cancel_btn.bind(on_press=popup.dismiss)
         popup.open()
-
+    
     def confirm_clear_all(self, instance):
+        """Подтверждение очистки всех данных"""
         content = BoxLayout(orientation='vertical', padding=15, spacing=15)
-
+        
         content.add_widget(Label(
-            text="⚠️ ВНИМАНИЕ!",
+            text="ВНИМАНИЕ!",
             font_size='20sp',
             color=(0.9, 0.2, 0.2, 1),
             size_hint=(1, None),
             height=40,
             bold=True
         ))
-
+        
         content.add_widget(Label(
             text="Это действие удалит ВСЕ данные:\n"
                  "- Историю просмотров\n"
@@ -1555,9 +1582,9 @@ class SettingsScreen(Screen):
             height=180,
             halign='center'
         ))
-
+        
         btn_row = BoxLayout(size_hint=(1, None), height=45, spacing=10)
-
+        
         cancel_btn = Button(
             text="Отмена",
             background_color=(0.3, 0.3, 0.3, 0.8),
@@ -1565,7 +1592,7 @@ class SettingsScreen(Screen):
             font_size='16sp'
         )
         btn_row.add_widget(cancel_btn)
-
+        
         confirm_btn = Button(
             text="Удалить всё",
             background_color=(0.8, 0.1, 0.1, 0.9),
@@ -1574,16 +1601,16 @@ class SettingsScreen(Screen):
             bold=True
         )
         btn_row.add_widget(confirm_btn)
-
+        
         content.add_widget(btn_row)
-
+        
         popup = Popup(
             title="",
             content=content,
             size_hint=(0.85, 0.6),
             background_color=(0.1, 0.1, 0.1, 0.95)
         )
-
+        
         def do_clear_all(instance):
             self.user_prefs.reset_data()
             popup.dismiss()
@@ -1592,7 +1619,7 @@ class SettingsScreen(Screen):
             success_popup = Popup(
                 title="",
                 content=Label(
-                    text="✅ Все данные удалены!",
+                    text="Все данные удалены!",
                     font_size='18sp',
                     color=(0.2, 0.8, 0.2, 1),
                     halign='center'
@@ -1603,11 +1630,10 @@ class SettingsScreen(Screen):
             success_popup.open()
             from kivy.clock import Clock
             Clock.schedule_once(lambda dt: success_popup.dismiss(), 1.5)
-
+        
         confirm_btn.bind(on_press=do_clear_all)
         cancel_btn.bind(on_press=popup.dismiss)
         popup.open()
-
 
 class TagScreen(Screen):
     """Экран фактов по тегу (только изученные)"""
@@ -1882,10 +1908,10 @@ class TopScreen(Screen):
 
 class WarFactApp(App):
     """Главное приложение"""
-
+    
     def build(self):
         sm = ScreenManager()
-
+        
         sm.add_widget(MainMenuScreen(name='main_menu'))
         sm.add_widget(FactScreen(name='fact_screen'))
         sm.add_widget(HistoryScreen(name='history_screen'))
@@ -1896,7 +1922,11 @@ class WarFactApp(App):
         sm.add_widget(TagScreen(name='tag_screen'))
         sm.add_widget(TagListScreen(name='tag_list_screen'))
         sm.add_widget(TopScreen(name='top_screen'))
-
+        
+        # Автопроверка обновлений через 5 секунд после запуска
+        from kivy.clock import Clock
+        Clock.schedule_once(lambda dt: check_for_updates(manual=False), 5)
+        
         return sm
 
 
