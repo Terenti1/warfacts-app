@@ -19,13 +19,11 @@ from kivy.graphics import Color, Rectangle
 from data import FACTS_DATABASE, get_facts_count, get_fact_by_id, get_all_tags, get_facts_by_tag
 from user_data import UserPreferences
 
-# Версия приложения
 try:
     from version import __version__
 except Exception:
     __version__ = "1.0.0"
 
-# Проверка обновлений
 try:
     from updater import check_for_updates, UPDATER_AVAILABLE
 except Exception as e:
@@ -36,7 +34,6 @@ except Exception as e:
 
 
 def _fact_label(fact, length=60):
-    """Короткое название факта: title, если есть, иначе обрезанный text."""
     title = fact.get("title")
     if title:
         return title
@@ -48,7 +45,6 @@ def make_header(title_text, back_callback, height=0.10):
     """Хедер с центрированным заголовком и кнопкой назад слева."""
     header = FloatLayout(size_hint=(1, height))
 
-    # Заголовок — на всю ширину, центрирован
     title = Label(
         text=title_text,
         font_size='20sp',
@@ -62,7 +58,6 @@ def make_header(title_text, back_callback, height=0.10):
     )
     header.add_widget(title)
 
-    # Кнопка "Назад" поверх — слева
     back_btn = Button(
         text="<--",
         size_hint=(0.15, 1),
@@ -99,7 +94,6 @@ class MainMenuScreen(Screen):
     def build_ui(self):
         layout = BoxLayout(orientation='vertical', padding=15, spacing=8)
 
-        # ХЕДЕР
         header = BoxLayout(orientation='vertical', size_hint=(1, 0.13))
         title = Label(
             text="ФАКТЫ О ВОВ",
@@ -118,7 +112,6 @@ class MainMenuScreen(Screen):
         header.add_widget(subtitle)
         layout.add_widget(header)
 
-        # ПРОГРЕСС
         total_facts = get_facts_count()
         viewed = len(self.user_prefs.data["viewed_facts"])
         progress = self.user_prefs.get_total_progress(total_facts)
@@ -169,7 +162,6 @@ class MainMenuScreen(Screen):
         progress_layout.add_widget(progress_bar)
         layout.add_widget(progress_layout)
 
-        # КНОПКА "ФАКТ ДНЯ"
         stats = self.user_prefs.get_user_stats()
         top_tags = stats['top_tags'][:3]
 
@@ -200,7 +192,6 @@ class MainMenuScreen(Screen):
         fact_btn.bind(on_release=self.go_to_fact_of_day)
         layout.add_widget(fact_btn)
 
-        # СЕТКА 2x2
         grid = GridLayout(cols=2, spacing=10, size_hint=(1, 0.42))
 
         history_btn = Button(
@@ -246,7 +237,6 @@ class MainMenuScreen(Screen):
 
         layout.add_widget(grid)
 
-        # ФУТЕР
         footer = BoxLayout(orientation='vertical', size_hint=(1, 0.05))
         footer.add_widget(Label(
             text=f"Фактов: {total_facts}  |  Изучено: {viewed}  |  Понравилось: {stats['liked_count']}",
@@ -819,7 +809,7 @@ class HistoryScreen(Screen):
         layout.add_widget(make_header("История", self.go_back, 0.10))
 
         scroll = ScrollView(size_hint=(1, 0.90), bar_width=4)
-        content_box = BoxLayout(orientation='vertical', size_hint_y=None, spacing=6)
+        content_box = BoxLayout(orientation='vertical', size_hint_y=None, spacing=10)
         content_box.bind(minimum_height=content_box.setter('height'))
 
         liked = self.user_prefs.data["liked_facts"]
@@ -832,10 +822,10 @@ class HistoryScreen(Screen):
             color=get_color_from_hex('#c9a84c'),
             bold=True,
             size_hint=(1, None),
-            height=30,
-            halign='left',
+            height=45,
+            halign='center',
             valign='middle',
-            text_size=(Window.width - 20, None)
+            text_size=(Window.width - 30, None)
         ))
 
         if liked:
@@ -852,7 +842,7 @@ class HistoryScreen(Screen):
                         background_color=get_color_from_hex('#4a2a1a'),
                         color=get_color_from_hex('#c9a84c'),
                         font_size='15sp',
-                        halign='left',
+                        halign='center',
                         valign='middle'
                     )
                     fact_btn.bind(on_release=lambda x, f=fact: self.view_fact(f))
@@ -863,11 +853,18 @@ class HistoryScreen(Screen):
                 font_size='14sp',
                 color=(0.5, 0.5, 0.5, 1),
                 size_hint=(1, None),
-                height=40,
+                height=45,
                 halign='center',
                 valign='middle',
                 text_size=(Window.width - 20, None)
             ))
+
+        # ПУСТОЙ РАЗДЕЛИТЕЛЬ
+        content_box.add_widget(Label(
+            text="",
+            size_hint=(1, None),
+            height=20
+        ))
 
         # СЕКЦИЯ: ИЗУЧЕННЫЕ (без лайкнутых)
         not_liked = [fid for fid in viewed if fid not in liked]
@@ -878,10 +875,10 @@ class HistoryScreen(Screen):
             color=(0.8, 0.8, 0.8, 1),
             bold=True,
             size_hint=(1, None),
-            height=30,
-            halign='left',
+            height=45,
+            halign='center',
             valign='middle',
-            text_size=(Window.width - 20, None)
+            text_size=(Window.width - 30, None)
         ))
 
         if not_liked:
@@ -898,7 +895,7 @@ class HistoryScreen(Screen):
                         background_color=get_color_from_hex('#2c3e50'),
                         color=(1, 1, 1, 1),
                         font_size='15sp',
-                        halign='left',
+                        halign='center',
                         valign='middle'
                     )
                     fact_btn.bind(on_release=lambda x, f=fact: self.view_fact(f))
@@ -910,7 +907,7 @@ class HistoryScreen(Screen):
                 font_size='14sp',
                 color=(0.5, 0.5, 0.5, 1),
                 size_hint=(1, None),
-                height=40,
+                height=45,
                 halign='center',
                 valign='middle',
                 text_size=(Window.width - 20, None)
@@ -954,7 +951,7 @@ class NotesScreen(Screen):
             lambda x: setattr(self.manager, 'current', 'main_menu'), 0.10))
 
         scroll = ScrollView(size_hint=(1, 0.90), bar_width=4)
-        notes_box = BoxLayout(orientation='vertical', size_hint_y=None, spacing=6)
+        notes_box = BoxLayout(orientation='vertical', size_hint_y=None, spacing=8)
         notes_box.bind(minimum_height=notes_box.setter('height'))
 
         all_notes = self.user_prefs.get_all_notes()
@@ -971,7 +968,7 @@ class NotesScreen(Screen):
                         background_color=get_color_from_hex('#2c3e50'),
                         color=(1, 1, 1, 1),
                         font_size='13sp',
-                        halign='left',
+                        halign='center',
                         valign='middle'
                     )
                     note_btn.bind(on_release=lambda x, f=fact: self.view_fact(f))
@@ -1020,7 +1017,7 @@ class StatsScreen(Screen):
             lambda x: setattr(self.manager, 'current', 'main_menu'), 0.09))
 
         scroll = ScrollView(size_hint=(1, 0.91), bar_width=4)
-        content = BoxLayout(orientation='vertical', size_hint_y=None, spacing=10)
+        content = BoxLayout(orientation='vertical', size_hint_y=None, spacing=12)
         content.bind(minimum_height=content.setter('height'))
 
         stats = self.user_prefs.get_user_stats()
@@ -1034,8 +1031,11 @@ class StatsScreen(Screen):
             font_size='16sp',
             color=get_color_from_hex('#c9a84c'),
             size_hint=(1, None),
-            height=30,
-            bold=True
+            height=40,
+            bold=True,
+            halign='center',
+            valign='middle',
+            text_size=(Window.width - 20, None)
         ))
 
         stats_grid = GridLayout(cols=2, spacing=6, size_hint=(1, None), height=100)
@@ -1094,8 +1094,11 @@ class StatsScreen(Screen):
             font_size='16sp',
             color=get_color_from_hex('#c9a84c'),
             size_hint=(1, None),
-            height=30,
-            bold=True
+            height=40,
+            bold=True,
+            halign='center',
+            valign='middle',
+            text_size=(Window.width - 20, None)
         ))
 
         all_tags = get_all_tags()
@@ -1119,7 +1122,7 @@ class StatsScreen(Screen):
             if data["viewed"] == 0:
                 continue
 
-            tag_container = BoxLayout(orientation='vertical', size_hint=(1, None), height=48, spacing=2)
+            tag_container = BoxLayout(orientation='vertical', size_hint=(1, None), height=55, spacing=3)
 
             tag_header = BoxLayout(size_hint=(1, 0.45))
 
@@ -1131,28 +1134,20 @@ class StatsScreen(Screen):
                 text=f"#{tag.capitalize()}{score_str}{completed}",
                 font_size='14sp',
                 color=(1, 1, 1, 1),
-                size_hint=(0.65, 1),
-                halign='left',
+                size_hint=(1, 1),
+                halign='center',
                 valign='middle',
-                text_size=(Window.width * 0.65, None)
-            ))
-            tag_header.add_widget(Label(
-                text=f"{data['viewed']}/{data['total']}",
-                font_size='13sp',
-                color=(0.7, 0.7, 0.7, 1),
-                size_hint=(0.35, 1),
-                halign='right',
-                valign='middle'
+                text_size=(Window.width - 30, None)
             ))
 
             tag_container.add_widget(tag_header)
 
             p_bar = Button(
-                text=f"{data['progress']}%",
+                text=f"{data['viewed']}/{data['total']}  ({data['progress']}%)",
                 background_color=(0.15, 0.15, 0.15, 1),
                 color=(1, 1, 1, 1),
                 size_hint=(1, 0.55),
-                font_size='11sp',
+                font_size='12sp',
                 disabled=True
             )
             p_bar.tag_progress = data["progress"]
@@ -1180,8 +1175,11 @@ class StatsScreen(Screen):
             font_size='16sp',
             color=get_color_from_hex('#c9a84c'),
             size_hint=(1, None),
-            height=30,
-            bold=True
+            height=40,
+            bold=True,
+            halign='center',
+            valign='middle',
+            text_size=(Window.width - 20, None)
         ))
 
         achievements = self.user_prefs.get_achievement_progress()
@@ -1190,11 +1188,11 @@ class StatsScreen(Screen):
                 ach_btn = Button(
                     text=f"[+] {ach['name']} — {ach['desc']}",
                     size_hint=(1, None),
-                    height=42,
+                    height=45,
                     background_color=get_color_from_hex('#2c3e50'),
                     color=(0.8, 0.8, 0.2, 1),
                     font_size='13sp',
-                    halign='left',
+                    halign='center',
                     valign='middle'
                 )
                 content.add_widget(ach_btn)
@@ -1204,13 +1202,11 @@ class StatsScreen(Screen):
                 font_size='14sp',
                 color=(0.5, 0.5, 0.5, 1),
                 size_hint=(1, None),
-                height=40,
+                height=45,
                 halign='center',
                 valign='middle',
                 text_size=(Window.width - 20, None)
             ))
-
-        # Кнопка сброса УДАЛЕНА (перенесена в настройки)
 
         scroll.add_widget(content)
         layout.add_widget(scroll)
@@ -1247,7 +1243,7 @@ class StatsScreen(Screen):
 
 
 # ============================================================
-#  НАСТРОЙКИ (без ScrollView)
+#  НАСТРОЙКИ (переработанный layout — контент сверху)
 # ============================================================
 
 class SettingsScreen(Screen):
@@ -1271,94 +1267,126 @@ class SettingsScreen(Screen):
         layout.add_widget(make_header("Настройки", 
             lambda x: setattr(self.manager, 'current', 'main_menu'), 0.09))
 
+        # ВСЁ СОДЕРЖИМОЕ В SCROLLVIEW — контент прижат к верху
+        scroll = ScrollView(size_hint=(1, 0.91), bar_width=4)
+        content = BoxLayout(orientation='vertical', size_hint_y=None, spacing=10)
+        content.bind(minimum_height=content.setter('height'))
+
         # Заголовок раздела
-        layout.add_widget(Label(
+        content.add_widget(Label(
             text="[ УПРАВЛЕНИЕ ДАННЫМИ ]",
-            font_size='14sp',
+            font_size='15sp',
             color=get_color_from_hex('#c9a84c'),
             bold=True,
             size_hint=(1, None),
-            height=25
+            height=35,
+            halign='center',
+            valign='middle',
+            text_size=(Window.width - 20, None)
         ))
 
         # Информация
         stats = self.user_prefs.get_user_stats()
-        info_grid = GridLayout(cols=2, spacing=4, size_hint=(1, None), height=70)
+        info_grid = GridLayout(cols=2, spacing=6, size_hint=(1, None), height=80)
         info_grid.add_widget(Label(
             text=f"Просмотрено: {stats['unique_facts_viewed']}",
-            font_size='13sp',
+            font_size='14sp',
             color=(0.9, 0.9, 0.9, 1)
         ))
         info_grid.add_widget(Label(
             text=f"Понравилось: {stats['liked_count']}",
-            font_size='13sp',
+            font_size='14sp',
             color=(0.9, 0.9, 0.9, 1)
         ))
         info_grid.add_widget(Label(
             text=f"Заметок: {len(self.user_prefs.get_all_notes())}",
-            font_size='13sp',
+            font_size='14sp',
             color=(0.9, 0.9, 0.9, 1)
         ))
         info_grid.add_widget(Label(
             text=f"Серия: {stats['streak_days']} дн.",
-            font_size='13sp',
+            font_size='14sp',
             color=(0.9, 0.7, 0.2, 1)
         ))
-        layout.add_widget(info_grid)
+        content.add_widget(info_grid)
 
-        # Кнопки
+        # Кнопки управления
         clear_btn = Button(
             text="ОЧИСТИТЬ ИСТОРИЮ",
             size_hint=(1, None),
-            height=48,
+            height=55,
             background_color=(0.6, 0.2, 0.2, 0.9),
             color=(1, 1, 1, 1),
-            font_size='15sp',
+            font_size='16sp',
             bold=True
         )
         clear_btn.bind(on_release=self.confirm_clear_history)
-        layout.add_widget(clear_btn)
+        content.add_widget(clear_btn)
 
         clear_all_btn = Button(
             text="ОЧИСТИТЬ ВСЕ ДАННЫЕ",
             size_hint=(1, None),
-            height=48,
+            height=55,
             background_color=(0.4, 0.1, 0.1, 0.8),
             color=(0.9, 0.6, 0.6, 1),
-            font_size='15sp',
+            font_size='16sp',
             bold=True
         )
         clear_all_btn.bind(on_release=self.confirm_clear_all)
-        layout.add_widget(clear_all_btn)
+        content.add_widget(clear_all_btn)
 
-        # Раздел: обновления
-        layout.add_widget(Label(
+        # Разделитель
+        content.add_widget(Label(
             text="",
             size_hint=(1, None),
-            height=10
+            height=15
         ))
 
-        layout.add_widget(Label(
-            text=f"Версия приложения: {__version__}",
-            font_size='13sp',
-            color=(0.6, 0.6, 0.6, 1),
+        # Заголовок раздела "Обновления"
+        content.add_widget(Label(
+            text="[ ОБНОВЛЕНИЯ ]",
+            font_size='15sp',
+            color=get_color_from_hex('#c9a84c'),
+            bold=True,
             size_hint=(1, None),
-            height=25
+            height=35,
+            halign='center',
+            valign='middle',
+            text_size=(Window.width - 20, None)
+        ))
+
+        content.add_widget(Label(
+            text=f"Версия приложения: {__version__}",
+            font_size='14sp',
+            color=(0.7, 0.7, 0.7, 1),
+            size_hint=(1, None),
+            height=30,
+            halign='center',
+            valign='middle',
+            text_size=(Window.width - 20, None)
         ))
 
         if UPDATER_AVAILABLE:
             update_btn = Button(
                 text="ПРОВЕРИТЬ ОБНОВЛЕНИЯ",
                 size_hint=(1, None),
-                height=48,
+                height=55,
                 background_color=get_color_from_hex('#2c3e50'),
                 color=(1, 1, 1, 1),
-                font_size='15sp',
+                font_size='16sp',
                 bold=True
             )
             update_btn.bind(on_release=lambda x: check_for_updates(manual=True))
-            layout.add_widget(update_btn)
+            content.add_widget(update_btn)
 
+        content.add_widget(Label(
+            text="",
+            size_hint=(1, None),
+            height=30
+        ))
+
+        scroll.add_widget(content)
+        layout.add_widget(scroll)
         self.add_widget(layout)
 
     def confirm_clear_history(self, instance):
@@ -1557,7 +1585,7 @@ class TagScreen(Screen):
         layout.add_widget(header)
 
         scroll = ScrollView(size_hint=(1, 0.90), bar_width=4)
-        self.facts_box = BoxLayout(orientation='vertical', size_hint_y=None, spacing=6)
+        self.facts_box = BoxLayout(orientation='vertical', size_hint_y=None, spacing=8)
         self.facts_box.bind(minimum_height=self.facts_box.setter('height'))
 
         scroll.add_widget(self.facts_box)
@@ -1594,7 +1622,7 @@ class TagScreen(Screen):
                     background_color=get_color_from_hex('#2c3e50'),
                     color=(1, 1, 1, 1),
                     font_size='15sp',
-                    halign='left',
+                    halign='center',
                     valign='middle'
                 )
                 fact_btn.bind(on_release=lambda x, f=fact: self.view_fact(f))
